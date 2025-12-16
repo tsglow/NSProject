@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="https://andybrewer.github.io/mvp/mvp.css" rel="stylesheet"></link>
+</head>
+
+<body>
+  <header>
+    <h1>
+      <a href="/">Homeplus Security News Scrapper</a>
+    </h1>
+    <!--
+    <h4> 현재 KISA 인터넷 침해사고 경보단계 : <font color="#cc0101"><b>{{t_info}}</b></font> </h4>     -->
+    <!--<h3>{{count}}개 기사를 수집하였습니다. </h3>-->
+  </header>
+  <main>
+    {% for i in article %}
+    <div>
+      <h3>{{i.cat}} | <a href="{{i.link}}" target="_blank">{{i.title}}</a> - {{i.media}}</h3>
+      <h4>{{i.pubDate}} | <a href="{{i.link}}" target="_blank">{{i.link}}</a></h4>      
+      <h4><i>기사 요약</i> <br>{{i.description}}</h4>
+      <h4><i>기사 전문</i> <br>{{i.text}}</h4>      
+      <hr>
+    </div>
+    {% endfor %}
+  </main>  
+</body>
+</html>
