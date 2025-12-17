@@ -20,6 +20,7 @@ DATA_DIR = os.path.join(BASE_DIR, 'data') #data 위치 지정을 위함
 
 
 
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -29,7 +30,7 @@ SECRET_KEY = 'django-insecure-(gv)!n$%70_jylfqf3a)_6%tz1fht&g4!^xnzfa=ypy16wsv#e
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['pipboy.mooo.com']
 
 
 # Application definition
@@ -120,6 +121,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = '/app/pipboy/static'
+#STATIC_DIR = os.path.join(BASE_DIR, 'static')
+#STATICFILES_DIRS = [ STATIC_DIR ]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
