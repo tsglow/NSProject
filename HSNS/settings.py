@@ -20,7 +20,6 @@ DATA_DIR = os.path.join(BASE_DIR, 'data') #data 위치 지정을 위함
 
 
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
