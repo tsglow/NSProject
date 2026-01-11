@@ -301,9 +301,10 @@ def scrap():
     # sorted_scrapped news를 new_년-월-일.csv로 저장    
     write_todb(media_list,'media')
     # 반환받은 media_list를 media.csv에 덮어쓰기
-    print ("오늘자 DB파일 작성을 완료하였습니다")
-    return sorted_scrapped_news
-    # sorted_scrapped_news를 반환     
+    print("오늘자 DB파일 작성을 완료하였습니다")
+    scrapped_news = load_db_todict(f'news_{search_date}')
+    return scrapped_news
+    # scrapped_news
   else:
     return scrapped_news
     # new_년-월-일.csv에서 load한 기사를 scrapped_news로 반환

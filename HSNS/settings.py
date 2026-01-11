@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-(gv)!n$%70_jylfqf3a)_6%tz1fht&g4!^xnzfa=ypy16wsv#e
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['pipboy.mooo.com','localhost']
+ALLOWED_HOSTS = ['pipboy.mooo.com','localhost', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = ['https://pipboy.mooo.com']
 #you need this to login admin page
 
