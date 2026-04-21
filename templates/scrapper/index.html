@@ -9,7 +9,11 @@
   -->  
   <link href="https://pipboy.mooo.com/static/scrapper/mvp.css" rel="stylesheet"></link>
   <link rel="icon" href="https://pipboy.mooo.com/static/scrapper/favicon.ico"></link>
-  
+  <title>Security News Scrapper</title>
+  <style>
+    #loader { display: block; }
+    #content { display: none; }
+  </style>
   
 </head>
 
@@ -23,15 +27,35 @@
     <!--<h3>{{count}}개 기사를 수집하였습니다. </h3>-->
   </header>
   <main>
-    {% for i in article %}
-    <div>
-      <h3>{{i.cat}} | <a href="{{i.link}}" target="_blank">{{i.title}}</a> - {{i.media}}</h3>
-      <h4>{{i.pubDate}} | <a href="{{i.link}}" target="_blank">{{i.link}}</a></h4>      
-      <h4><i>기사 요약</i> <br>{{i.description}}</h4>
-      <h4><i>기사 전문</i> <br>{{i.text}}</h4>      
-      <hr>
+    <div id="loader">
+      <h3> 기사를 불러오는 중입니다...</h3>
     </div>
-    {% endfor %}
+    <div id="content">
+    </div>
+    <script>      
+      document.addEventListener("DOMContentLoaded", function(){
+        const loadDiv = document.getElementById('loader');
+        const contentDiv = document.getElementById('content');        
+        fetch('get-data/')
+          .then(response => response.json())
+          .then(data => {
+            const articles = data.article;
+            articles.forEach(item => {
+              const articleDiv = document.createElement('div');
+              articleDiv.innerHTML = `
+                <h3>${item.cat} | <a href="${item.link}" target="_blank">${item.link}}</a> - ${item.media}</h3>
+                <h4>${item.pubDate} | <a href="${item.link}" target="_blank">${item.link}</a></h4>      
+                <h4><i>기사 요약</i> <br>${item.description}</h4>
+                <h4><i>기사 전문</i> <br>${item.text}}</h4>      
+                `;
+              contentDiv.appendChild(articleDiv);            
+            });
+            loadDiv.style.display = 'none';
+            contentDiv.style.display = 'block';
+          })
+          .catch(error => console.error('기사 로딩 중 오류 발생:',error));
+        });      
+    </script>    
   </main>  
 </body>
 </html>
