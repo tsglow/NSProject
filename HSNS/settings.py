@@ -18,7 +18,7 @@ from django.core.exceptions import ImproperlyConfigured
 with open("secrets.json") as f:
     secrets = json.loads(f.read())
 
-def get_secret(setting, secrets=secret):
+def get_secret(setting, secrets=secrets):
     try: 
         return secrets[setting]
     except KeyError:

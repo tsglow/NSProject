@@ -6,6 +6,7 @@ from newspaper import Article
 from pytz import timezone
 from operator import itemgetter
 from scrapper.load_write import load_db_todict,load_db_tolist,write_todb
+from django.conf import settings
 
 # get_kisa_status()
 # 인터넷 진흥원의 인터넷 침해사고 경보단계를 가져오는 함수
@@ -189,9 +190,9 @@ def make_article(entry, cat, media_list):
 def get_news(word, current_time, w_day):  
   sorted_news_list = []
   # sorted_news_list 최종 반환할 sorted_news_list를 초기화
-  na_id = N_ID
+  na_id = settings.N_ID
   # NA_id naver news api id
-  na_psd = N_PWD
+  na_psd = settings.N_PWD
   # na_psd naver news api passowrd
   encode_type = 'json'  
   # encode_type naver news api 출력 방식 : json 또는 xml
@@ -203,7 +204,7 @@ def get_news(word, current_time, w_day):
   # start 출력 위치
   headers_naver = {'User-Agent':
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36',
-    'X-Naver-Client-Id': NA_id,
+    'X-Naver-Client-Id': na_id,
     'X-Naver-Client-Secret': na_psd}
   # headers_naver bot block 방지용 header 
   print(f'{word} 기사 검색중')
