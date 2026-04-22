@@ -12,12 +12,25 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import json
+from django.core.exceptions import ImproperlyConfigured
+
+with open("secrets.json") as f:
+    secrets = json.loads(f.read())
+
+def get_secret(setting, secrets=secrets):
+    try: 
+        return secrets[setting]
+    except KeyError:
+        error_msg = f"Set the {setting} environment variable before call"
+        raise ImproperlyConfigured(error_msg)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates') #templates 위치 지정을 위함
 DATA_DIR = os.path.join(BASE_DIR, 'data') #data 위치 지정을 위함
-
+N_ID = get_secret("na_id")
+N_PWD = get_secret("na_psd")
 
 
 # Quick-start development settings - unsuitable for production
