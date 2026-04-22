@@ -189,10 +189,10 @@ def make_article(entry, cat, media_list):
 def get_news(word, current_time, w_day):  
   sorted_news_list = []
   # sorted_news_list 최종 반환할 sorted_news_list를 초기화
-  NA_id = "IHh_ePMGCQVkZkjIZ1CA"
+  na_id = N_ID
   # NA_id naver news api id
-  NA_psd = "AzbXHQ6BTA"
-  # NA_psd naver news api passowrd
+  na_psd = N_PWD
+  # na_psd naver news api passowrd
   encode_type = 'json'  
   # encode_type naver news api 출력 방식 : json 또는 xml
   max_display = 10
@@ -204,7 +204,7 @@ def get_news(word, current_time, w_day):
   headers_naver = {'User-Agent':
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36',
     'X-Naver-Client-Id': NA_id,
-    'X-Naver-Client-Secret': NA_psd}
+    'X-Naver-Client-Secret': na_psd}
   # headers_naver bot block 방지용 header 
   print(f'{word} 기사 검색중')
   url = f'https://openapi.naver.com/v1/search/news.{encode_type}?query="{word}"&display={str(int(max_display))}&start={str(int(start))}&sort={sort}'
