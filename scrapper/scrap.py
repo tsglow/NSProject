@@ -189,9 +189,9 @@ def make_article(entry, cat, media_list):
 def get_news(word, current_time, w_day):  
   sorted_news_list = []
   # sorted_news_list 최종 반환할 sorted_news_list를 초기화
-  NA_id = "IHh_ePMGCQVkZkjIZ1CA"
+  NA_id = ""
   # NA_id naver news api id
-  NA_psd = "AzbXHQ6BTA"
+  NA_psd = ""
   # NA_psd naver news api passowrd
   encode_type = 'json'  
   # encode_type naver news api 출력 방식 : json 또는 xml
