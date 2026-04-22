@@ -19,7 +19,7 @@ with open("secrets.json") as f:
     secrets = json.loads(f.read())
 
 def get_secret(setting, secrets=secret):
-    try
+    try: 
         return secrets[setting]
     except KeyError:
         error_msg = f"Set the {setting} environment variable before call"
