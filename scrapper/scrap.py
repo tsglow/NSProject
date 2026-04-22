@@ -31,11 +31,11 @@ def time_check():
 # convert_time()
 # get_news()에서 사용할 수 있게 검색된 news의 pubTime을 str로 변환
 def convert_time(time):
-  print(time)
+  # print(time)
   strip = datetime.datetime.strptime(time, '%a, %d %b %Y %H:%M:%S +0900')
   converted_str = strip.strftime('%Y-%m-%d %H:%M:%S')
   converted = datetime.datetime.strptime(converted_str, '%Y-%m-%d %H:%M:%S')
-  print(converted)
+  # print(converted)
   return converted
 
 # edit_media_list()
