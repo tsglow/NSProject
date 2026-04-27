@@ -38,10 +38,15 @@
       document.addEventListener("DOMContentLoaded", function(){
         const loadDiv = document.getElementById('loader');
         const contentDiv = document.getElementById('content');        
-        fetch('get-data/')
-          .then(response => response.json())
-          .then(data => {
+        fetch('get-data/')          
+          .then(response => {
+            console.log("moo 1");
+            //console.log(response.data.article)
+            return response.json()})
+          .then(data => {       
+            console.log("moo 2");
             const articles = data.article;
+            console.log("moo 3");           
             articles.forEach(item => {
               const articleDiv = document.createElement('div');
               articleDiv.innerHTML = `

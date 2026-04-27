@@ -9,5 +9,5 @@ def index(request):
     return render(request, 'scrapper/index.html')
 
 async def get_data(request):
-    articles = {'article' : scrap()}
-    return JsonResponse(articles) 
+    articles = {'article' : scrap()}    
+    return JsonResponse(articles)

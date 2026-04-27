@@ -141,6 +141,17 @@ def make_text(link, headers):
 
 # remove_tag()
 # entry 개체의 title, description의 태그를 제거 후 반환 
+
+def remove_tag(obj, part):
+  x = str(obj.get(part)) 
+  #obj의 part 부분만을 str x 로 선언
+  x = re.sub('<.+?>', '', x, 0, re.I | re.S)
+  x = re.sub('&quot;', '', x, 0, re.I | re.S)
+  x = re.sub('&apos;', '', x, 0, re.I | re.S)
+  #정규식을 | 을 사용하 나열시 최초 매칭되는 것 하나만 sub처리되기 때문에 각각 개별 처리
+  obj[part] = str(x)
+
+'''
 def remove_tag(entry):
     x = str(entry.get('title'))
     # x entry의 title 부분만을 str x로 선언
@@ -160,6 +171,7 @@ def remove_tag(entry):
     # entry['title'] 을 x 의 str 값으로 치환
     entry['description'] = str(y)
     # entry['description'] 을 y 의 str 값으로 치환
+'''
 
 # make_article()
 # entry 개체를 표시할 정보에 맞춰 다듬는 함수
@@ -167,7 +179,8 @@ def make_article(entry, cat, media_list):
   headers = {'User-Agent':
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'}
   # headers 기사 본문 수집과 신문사 정보를 얻을 때 사용할 header
-  remove_tag(entry)
+  remove_tag(entry, 'title')
+  remove_tag(entry, 'description')
   # remove_tag(entry) entry 내에 문자(열)로 포함된 html 태그 제거 
   text, domain = make_text(entry['originallink'], headers)  
   # text, domain make_text()에 entry link값을 인로 주고 기사 본문과 domain 주소를 반환받음
@@ -180,7 +193,8 @@ def make_article(entry, cat, media_list):
     'cat': cat,
     'link': entry['originallink'],
     'text': text,
-    'media' : name}
+    'media' : name
+    }
   # 위에서 반환 받은 값으로 entry 를 result로 재구성
   return result, media_list
   # result 개체와 meida_list 반환
@@ -248,7 +262,8 @@ def scrap():
   # current_time, w_day 현재 time과 요일
   search_date = current_time.strftime('%Y-%m-%d') 
   # current_time에서 date 만 Y-M-D형태로 추출. db 파일명으로 사용.
-  keywords = ["악성코드","랜섬웨어","멀웨어","취약점","CVE","제로데이","해킹","해커","사이버공격","DDos","디도스","개인정보","고객정보","보안사고","GDPR","피싱"]  
+  keywords = ["악성코드","랜섬웨어"]  
+  #keywords = ["악성코드","랜섬웨어","멀웨어","취약점","CVE","제로데이","해킹","해커","사이버공격","DDos","디도스","개인정보","고객정보","보안사고","GDPR","피싱"]  
   # keywords 검색할 키워드  
   media_list = load_db_todict("media")  
   # media_list 매체 정보
