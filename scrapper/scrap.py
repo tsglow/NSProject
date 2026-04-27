@@ -36,7 +36,7 @@ def convert_time(time):
   converted_str = strip.strftime('%Y-%m-%d %H:%M:%S')
   converted = datetime.datetime.strptime(converted_str, '%Y-%m-%d %H:%M:%S')
   # print(converted)
-  return converted
+  return converted  
 
 # edit_media_list()
 # domain 과 신문사 name을 개체로 만들어서 media_list에 추가해 반환하는 함수
@@ -44,6 +44,20 @@ def edit_media_list(domain, name, media_list):
     site_info = {"domain": domain, "media_name": name}
     media_list.append(site_info)    
     return media_list        
+
+# brush_Text
+# tag 및 뉴라인을 제거
+def brush_text(text):
+  x = str(text) 
+  #obj의 part 부분만을 str x 로 선언 
+  x = re.sub('<.+?>', '', x, 0, re.I | re.S)  
+  x = re.sub('&quot;', '', x, 0, re.I | re.S)
+  x = re.sub('&apos;', '', x, 0, re.I | re.S)
+  x = re.sub(r'\r?\n', '', x, 0, re.I | re.S)
+  #정규식을 | 을 사용하 나열시 최초 매칭되는 것 하나만 sub처리되기 때문에 각각 개별 처리  
+  #print(str(x))
+  return str(x)
+
 
 # get_brand()
 # domain을 requeset로 soup화 하여 title tag의 내용물을 신문사 이름으로 반환하는 함수
@@ -142,59 +156,27 @@ def make_text(link, headers):
 # remove_tag()
 # entry 개체의 title, description의 태그를 제거 후 반환 
 
-def remove_tag(obj, part):
-  x = str(obj.get(part)) 
-  #obj의 part 부분만을 str x 로 선언
-  x = re.sub('<.+?>', '', x, 0, re.I | re.S)
-  x = re.sub('&quot;', '', x, 0, re.I | re.S)
-  x = re.sub('&apos;', '', x, 0, re.I | re.S)
-  #정규식을 | 을 사용하 나열시 최초 매칭되는 것 하나만 sub처리되기 때문에 각각 개별 처리
-  obj[part] = str(x)
-
-'''
-def remove_tag(entry):
-    x = str(entry.get('title'))
-    # x entry의 title 부분만을 str x로 선언
-    x = re.sub('<.+?>', '', x, 0, re.I | re.S)
-    # x re 메써드로 <로 시작해 >로 끝나는 문자열 제거
-    x = re.sub('&quot;', '', x, 0, re.I | re.S)
-    # x re 메써드로 &quot 제거
-    x = re.sub('&apos;', '', x, 0, re.I | re.S)    
-    y = str(entry.get('description'))
-    # y entry의 description 부분만을 str y로 선언
-    y = re.sub('<.+?>', '', y, 0, re.I | re.S)
-    # y re 메써드로 <로 시작해 >로 끝나는 문자열 제거. 
-    y = re.sub('&quot;', '', y, 0, re.I | re.S)
-    y = re.sub('&apos;', '', y, 0, re.I | re.S)
-    # y re 메써드로 &quot 제거. ''로로 replace 가능한지 확인해볼것
-    entry['title'] = str(x)
-    # entry['title'] 을 x 의 str 값으로 치환
-    entry['description'] = str(y)
-    # entry['description'] 을 y 의 str 값으로 치환
-'''
-
 # make_article()
 # entry 개체를 표시할 정보에 맞춰 다듬는 함수
 def make_article(entry, cat, media_list):
   headers = {'User-Agent':
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'}
   # headers 기사 본문 수집과 신문사 정보를 얻을 때 사용할 header
-  remove_tag(entry, 'title')
-  remove_tag(entry, 'description')
-  # remove_tag(entry) entry 내에 문자(열)로 포함된 html 태그 제거 
   text, domain = make_text(entry['originallink'], headers)  
   # text, domain make_text()에 entry link값을 인로 주고 기사 본문과 domain 주소를 반환받음
   name, media_list = get_brand(domain, media_list, headers)
   # name, media_list get_brand()에 domain, meida_list를 인자로주고, 신문사 name과 신규 신문사가 추가된 media_list를 반환받음
+    
   result = {
-    'title': entry['title'],    
-    'description': entry['description'],
-    'pubDate': convert_time(entry['pubDate']),
+    'title': brush_text(entry.get('title')),    
+    'description': brush_text(entry.get('description')),
+    'pubDate': convert_time(entry.get('pubDate')),
     'cat': cat,
     'link': entry['originallink'],
-    'text': text,
-    'media' : name
+    'text': brush_text(text),
+    'media' : brush_text(name)
     }
+  #print(result)
   # 위에서 반환 받은 값으로 entry 를 result로 재구성
   return result, media_list
   # result 개체와 meida_list 반환
@@ -234,7 +216,7 @@ def get_news(word, current_time, w_day):
     news_list = news_request.json()["items"]   
     # news_list news_rqueset의 개체들을 list로 변환
     for news in news_list:    
-      pubDate = convert_time(news['pubDate'])
+      pubDate = convert_time(news['pubDate'])      
       # pubDate = news_list 개체의 pubdate를 비교 가능한 형태로 변환    
       dayDiff = (current_time - pubDate).days
       # dayDiff 오늘 날짜 - 기사 날짜 
