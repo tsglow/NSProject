@@ -244,8 +244,8 @@ def scrap():
   # current_time, w_day 현재 time과 요일
   search_date = current_time.strftime('%Y-%m-%d') 
   # current_time에서 date 만 Y-M-D형태로 추출. db 파일명으로 사용.
-  keywords = ["악성코드","랜섬웨어"]  
-  #keywords = ["악성코드","랜섬웨어","멀웨어","취약점","CVE","제로데이","해킹","해커","사이버공격","DDos","디도스","개인정보","고객정보","보안사고","GDPR","피싱"]  
+  # keywords = ["악성코드","랜섬웨어"]  
+  keywords = ["악성코드","랜섬웨어","멀웨어","취약점","CVE","제로데이","해킹","해커","사이버공격","DDos","디도스","개인정보","고객정보","보안사고","GDPR","피싱"]  
   # keywords 검색할 키워드  
   media_list = load_db_todict("media")  
   # media_list 매체 정보

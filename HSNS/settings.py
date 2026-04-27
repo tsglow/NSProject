@@ -31,6 +31,7 @@ TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates') #templates 위치 지정을 �
 DATA_DIR = os.path.join(BASE_DIR, 'data') #data 위치 지정을 위함
 N_ID = get_secret("na_id")
 N_PWD = get_secret("na_psd")
+NEW_KWD = get_secret("na_psd")
 
 
 # Quick-start development settings - unsuitable for production
