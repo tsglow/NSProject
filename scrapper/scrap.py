@@ -1,6 +1,7 @@
-import requests, datetime, re
+import requests, re
 from bs4 import BeautifulSoup
 from newspaper import Article
+from datetime import datetime
 from pytz import timezone
 from operator import itemgetter
 from scrapper.load_write import load_db_todict,load_db_tolist,write_todb
@@ -68,10 +69,9 @@ def get_brand(domain,headers):
   if Media.objects.filter(domain=domain).exists():
   # if any(d['domain'] == domain for d in media_list):
     # domain이 테이블 안에 있으면    
-    # site_info meia_list에서 domain 값을 가진 개체를 site_info로 반환
-    name = Media.objects.get(domain=domain).media_name
+    # site_info meia_list에서 domain 값을 가진 개체를 site_info로 반환    
     # name site_info의 media_name을 name으로 반환
-    return name
+    return Media.objects.get(domain=domain)
     # name과 media_list 반환
   else:
     # domain이 media_list에 없으면
@@ -85,11 +85,12 @@ def get_brand(domain,headers):
         # rst domain 을 reguest.get()에 인자로 주고 rst를 반환받음
       except:
         # request.get() 했을 때 오류가 발생하면
-        name = domain
+        name = Media(domain=domain, media_name=domain)
+        name.save()
         # name domain 값을 name으로 처리
         # media_list = edit_media_list(domain, name, media_list)
         # new_media domain, name 을 edit_media_list에 인자로 주고 반환값으로 media_list 갱신
-        return name
+        return Media.objects.get(domain=domain)
         # return name, media_list
         # name, media_list 반환
       else:
@@ -104,18 +105,22 @@ def get_brand(domain,headers):
           # name head tag의 title tag 문자열을 name으로 반환시도해서
         except:
           # title tag 가 없는 등 오류가 발생하면
-          name = domain
+          name = Media(domain=domain, media_name=domain)
+          name.save()
           # name domain 값을 name으로 처리
           # media_list = edit_media_list(domain, name, media_list)
           # media_list domain, name 을 edit_media_list에 인자로 주고 반환값으로 media_list 갱신
-          return name
+          return Media.objects.get(domain=domain)
           # return name, media_list
           # name, media_list 반환
         else:
           # name 값이 정상적으로 반환되면
           # media_list = edit_media_list(domain, name, media_list)
           # media_list domain, name 을 edit_media_list에 인자로 주고 반환값으로 media_list 갱신
-          return name
+          name = brush_text(name)
+          new_media = Media(domain=domain, media_name=name)
+          new_media.save()
+          return new_media
           # return name, media_list
           # name, media_list 반환
 
@@ -170,21 +175,19 @@ def make_article(entry, cat):
   # headers 기사 본문 수집과 신문사 정보를 얻을 때 사용할 header
   text, domain = make_text(entry['originallink'], headers)  
   # text, domain make_text()에 entry link값을 인로 주고 기사 본문과 domain 주소를 반환받음
-  name = get_brand(domain,headers)
-  # name, get_brand()에 domain를  인자로주고, 신문사 name을 반환받음
-    
-  result = {
-    'title': brush_text(entry.get('title')),    
-    'description': brush_text(entry.get('description')),
-    'pubDate': convert_time(entry.get('pubDate')),
-    'cat': cat,
-    'link': entry['originallink'],
-    'text': brush_text(text),
-    'media' : brush_text(name)
-    }
+  result = News(
+    title = brush_text(entry.get('title')),    
+    description = brush_text(entry.get('description')),
+    pubDate = convert_time(entry.get('pubDate')),
+    cat = Keywords.objects.filter(Keyword=cat),
+    link = entry['originallink'],
+    text = brush_text(text),
+    media = get_brand(domain,headers)
+    )
+  result.save()
   #print(result)
   # 위에서 반환 받은 값으로 entry 를 result로 재구성
-  return result
+  # return result
   # result 개체와 meida_list 반환
 
 # get_news()
@@ -221,7 +224,7 @@ def get_news(word, current_time, w_day):
   else:   
     news_list = news_request.json()["items"]   
     # news_list news_rqueset의 개체들을 list로 변환
-    for news in news_list:    
+    for news in news_list:      
       pubDate = convert_time(news['pubDate'])      
       # pubDate = news_list 개체의 pubdate를 비교 가능한 형태로 변환    
       dayDiff = (current_time - pubDate).days
@@ -237,12 +240,31 @@ def get_news(word, current_time, w_day):
     return sorted_news_list
   # sorted_news_list 반환
 
+# News 모델의 데이터를 읽어서 json 으로 줄 수 있도록 모두 string으로 변환
+# db 데이터에 pubdate 기준으로 필터를 걸어서 그날자 기사가 없으면 rase error 하는 로직 필요
+def load_news(search_date, w_day):
+  str_list = []  
+  days = 3 if w_day == 0 else 2   
+  news_list = News.objects.filter(pubDate__range=(timezone.now()-datetime.timedelta(days=days),timezone.now())).order_by('-pubDate')
+  for news in news_list:
+    item = {
+      'title': news.title,
+      'description' : news.description,
+      'text': news.text,
+      'pubdate': datetime.strftime(news.pubDate,'%Y-%m-%d %H:%M:%S'),
+      'cat': ' '.join(news.cat.all().values_list('keyword', flat=True)),
+      'link': news.link,
+      'media': news.media.media_name
+    }
+    str_list.append(item)
+    return str_list
+  
 
-# scrap()
+# init()
 # main.py에서 flask app으로 호출되며 수집된 기사를 list로 반환하는 함수. 
 # home(/)이 호출될 때마다 실행되며, 현재 replit.com에서 flask 페이지가 두번씩 호출되는 버그가 있어, 변수를 전역으로 사용할 경우 '변수=함수' 사용시 결과 값이 2개 이상 리턴될 수 있음. 
 # 버그를 회피하기 위해 반드시 함수내 변수로만 지정하고 global을 사용하지 말것 
-def scrap():
+def init():
   # part 1. 인자에 사용할 변수들  
   scrapped_news = []
   # scrapped_news 뉴스 리스트 초기화 
@@ -250,78 +272,57 @@ def scrap():
   # current_time, w_day 현재 time과 요일
   search_date = current_time.strftime('%Y-%m-%d') 
   # current_time에서 date 만 Y-M-D형태로 추출. db 파일명으로 사용.
-  # keywords = ["악성코드","랜섬웨어"]  
-  keywords =  Keywords.objects.all().values_list('keyword', flat=True)  
-  #keywords = ["악성코드","랜섬웨어","멀웨어","취약점","CVE","제로데이","해킹","해커","사이버공격","DDos","디도스","개인정보","고객정보","보안사고","GDPR","피싱"]  
-  # keywords 검색할 키워드  
-
-  # media 는 이제 db에서 직접 쿼리할 수 있으므로 리스트를 만들어 넘겨주지 않아도 됨
-  # media_list = Media.objects.all()
-  '''
-  for media in media_list:
-    insert = Media(media_name=media['media_name'], domain=media['domain'])
-    try:      
-      insert.save()   
-    except:
-      pass
-  '''
   
-
-  # media_list 매체 정보
   # part 2. 기사 처리 
   try:    
-    scrapped_news = load_db_todict(f'news_{search_date}')
+    scrapped_news = load_news(search_date, w_day)
     # 이미 수집해서 db 파일을 작성했으면 이걸 load        
-    print("db loaded")    
+    print("DB에서 기사를 불러왔습니다.")    
   except:
-    # DB 파일이 없는 경우
-    print("오늘자 기사db파일이 없습니다. 새로 작성합니다")
-    for word in keywords:      
-      news_list = get_news(word, current_time, w_day)      
+    # DB에 내용이 없는 경우
+    print("불러올 기사 파일이 없습니다. ")
+    # media 는 이제 db에서 직접 쿼리할 수 있으므로 리스트를 만들어 넘겨주지 않아도 됨   
+    # media_list = Media.objects.all()           
+
+    keywords =  Keywords.objects.all()[:2].values_list('keyword', flat=True)
+    # 뉴스에서 검색할 키워드  
+
+    for key in keywords:      
+      news_list = get_news(key, current_time, w_day)      
       # keywords 의 각 검색어를 인자로 get_new를 실행하고 결과를 news_list로 반환받음
       if len(news_list) < 1:
-        print(f"{word}로 검색된 기사가 없습니다")
+        print(f"{key}로 검색된 기사가 없습니다")
         pass
       else:
         for entry in news_list:
-          # 반환 받은 news_list중 중복 기사를 처리        
-          cat = word
+          # 반환 받은 news_list중 중복 기사를 처리                  
           # cat(egory) 값을 검색어word로 선언하고
-          if any(r['link'] == entry['originallink'] for r in scrapped_news):
-            # 중복처리가 끝난 new_list 개체를 넣는 scrapped_news에서 link 값이 같은 기사가 있는지 검색
+          if News.objects.filter(url=entry['originallink']).exists():
             print("중복")
-            search_overlap = next(item for item in scrapped_news if item['link'] == entry['originallink'])
-            # link 값이 같은 개체를 찾아서 next 로 해당 개체를 serch_overlap으로 선언
-            old_cat = search_overlap['cat']
-            print(old_cat)
-            # serch_overlap의 cat 을 old_cat으로 선언
-            if cat in old_cat:
-              # old_cat에 검색어(string) cat이 포함되어 있으면 pass
-              pass
-            else:
-              search_overlap['cat'] = f'{old_cat}, {cat}'
-              # old_cat에 검색어 cat이 포함되어 있지 않으면, cat을 뒤에 붙여준 스트링으로 덮어 쓰기   
-          else:
-            print("신규")        
-            result = make_article(entry, cat)    
+            add_key = Keywords.objects.get(keyword=key)
+            News.objects.get(url=entry['originallink']).cat.add(add_key)
+          else:               
+            make_article(entry, key)    
             # 중복 기사가 아닐 경우 entry를 cat, media_list와 함께 make_article 함수에 인자로 던져주고 result,medi_list를 반환받음
             # Media_list를 반환 받을 필요가 있는지 확인해볼 것.          
-            if result["media"] == "도메인 에러" : 
+            #if result["media"] == "도메인 에러" : 
               # new api 결과에서 link가 누락된 기사 예외처리
-              pass
-            else:
-              scrapped_news.append(result)
+            #  pass
+            #else:
+            #  scrapped_news.append(result)
           # 반환받은 result 개체를 scrapped_news에 추가
     # part 3. 수집 결과 반환              
-    sorted_scrapped_news = sorted(scrapped_news, key=itemgetter('pubDate'), reverse=True)
-    # 수집이 끝난 scrapped_news 리스트를 최신 순으로 정렬
-    write_todb(sorted_scrapped_news, f'news_{search_date}')
+    # sorted_scrapped_news = sorted(scrapped_news, key=itemgetter('pubDate'), reverse=True)
+    # 수집이 끝난 scrapped_news 리스트를 최신 순으로 정렬    )
+    # write_todb(sorted_scrapped_news, f'news_{search_date}')
     # sorted_scrapped news를 new_년-월-일.csv로 저장    
     # write_todb(media_list,'media')
     # 반환받은 media_list를 media.csv에 덮어쓰기는 것으로 이제 db로 전환했기 때문에 주석처리
-    print("오늘자 DB파일 작성을 완료하였습니다")
-    scrapped_news = load_db_todict(f'news_{search_date}')
+    print("뉴스 수집을 완료하였습니다.")
+    scrapped_news = load_news(search_date, w_day)
     return scrapped_news
+    # scrapped_news = load_db_todict(f'news_{search_date}')
+    # return sorted_scrapped_news
     # scrapped_news
   else:
     return scrapped_news
