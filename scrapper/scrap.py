@@ -1,12 +1,11 @@
-import requests
+import requests, datetime, re
 from bs4 import BeautifulSoup
-import datetime
-import re
 from newspaper import Article
 from pytz import timezone
 from operator import itemgetter
 from scrapper.load_write import load_db_todict,load_db_tolist,write_todb
 from django.conf import settings
+from .models import Keywords, Media, News
 
 # get_kisa_status()
 # 인터넷 진흥원의 인터넷 침해사고 경보단계를 가져오는 함수
@@ -40,10 +39,14 @@ def convert_time(time):
 
 # edit_media_list()
 # domain 과 신문사 name을 개체로 만들어서 media_list에 추가해 반환하는 함수
+# db화로 인해 불필요
+'''
 def edit_media_list(domain, name, media_list):
     site_info = {"domain": domain, "media_name": name}
     media_list.append(site_info)    
-    return media_list        
+    return media_list
+'''
+
 
 # brush_Text
 # tag 및 뉴라인을 제거
@@ -61,14 +64,14 @@ def brush_text(text):
 
 # get_brand()
 # domain을 requeset로 soup화 하여 title tag의 내용물을 신문사 이름으로 반환하는 함수
-def get_brand(domain,media_list,headers):  
-  if any(d['domain'] == domain for d in media_list):
-    # domain이 media_list에 있으면    
-    site_info = next(item for item in media_list if item['domain'] == domain)
+def get_brand(domain,headers):  
+  if Media.objects.filter(domain=domain).exists():
+  # if any(d['domain'] == domain for d in media_list):
+    # domain이 테이블 안에 있으면    
     # site_info meia_list에서 domain 값을 가진 개체를 site_info로 반환
-    name = site_info['media_name']
+    name = Media.objects.get(domain=domain).media_name
     # name site_info의 media_name을 name으로 반환
-    return name, media_list
+    return name
     # name과 media_list 반환
   else:
     # domain이 media_list에 없으면
@@ -84,13 +87,14 @@ def get_brand(domain,media_list,headers):
         # request.get() 했을 때 오류가 발생하면
         name = domain
         # name domain 값을 name으로 처리
-        media_list = edit_media_list(domain, name, media_list)
+        # media_list = edit_media_list(domain, name, media_list)
         # new_media domain, name 을 edit_media_list에 인자로 주고 반환값으로 media_list 갱신
-        return name, media_list
+        return name
+        # return name, media_list
         # name, media_list 반환
       else:
         # request.get()이 정상적으로 실행되면
-        print(f'  now checking {domain}')        
+        print(f'now checking {domain}')        
         rst.encoding = rst.apparent_encoding
         # rst.encoding rst개체를 원문 기사 인코딩 방식대로 인코딩처리. euc-kr로 나타내는게 목적이지만 원문 기사가 euc-kr이 아니었다면 여전히 깨질 수 있음. 
         soup = BeautifulSoup(rst.text, 'html.parser')
@@ -102,15 +106,17 @@ def get_brand(domain,media_list,headers):
           # title tag 가 없는 등 오류가 발생하면
           name = domain
           # name domain 값을 name으로 처리
-          media_list = edit_media_list(domain, name, media_list)
+          # media_list = edit_media_list(domain, name, media_list)
           # media_list domain, name 을 edit_media_list에 인자로 주고 반환값으로 media_list 갱신
-          return name, media_list
+          return name
+          # return name, media_list
           # name, media_list 반환
         else:
           # name 값이 정상적으로 반환되면
-          media_list = edit_media_list(domain, name, media_list)
+          # media_list = edit_media_list(domain, name, media_list)
           # media_list domain, name 을 edit_media_list에 인자로 주고 반환값으로 media_list 갱신
-          return name, media_list
+          return name
+          # return name, media_list
           # name, media_list 반환
 
 # extract_domain()
@@ -158,14 +164,14 @@ def make_text(link, headers):
 
 # make_article()
 # entry 개체를 표시할 정보에 맞춰 다듬는 함수
-def make_article(entry, cat, media_list):
+def make_article(entry, cat):
   headers = {'User-Agent':
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'}
   # headers 기사 본문 수집과 신문사 정보를 얻을 때 사용할 header
   text, domain = make_text(entry['originallink'], headers)  
   # text, domain make_text()에 entry link값을 인로 주고 기사 본문과 domain 주소를 반환받음
-  name, media_list = get_brand(domain, media_list, headers)
-  # name, media_list get_brand()에 domain, meida_list를 인자로주고, 신문사 name과 신규 신문사가 추가된 media_list를 반환받음
+  name = get_brand(domain,headers)
+  # name, get_brand()에 domain를  인자로주고, 신문사 name을 반환받음
     
   result = {
     'title': brush_text(entry.get('title')),    
@@ -178,7 +184,7 @@ def make_article(entry, cat, media_list):
     }
   #print(result)
   # 위에서 반환 받은 값으로 entry 를 result로 재구성
-  return result, media_list
+  return result
   # result 개체와 meida_list 반환
 
 # get_news()
@@ -245,9 +251,22 @@ def scrap():
   search_date = current_time.strftime('%Y-%m-%d') 
   # current_time에서 date 만 Y-M-D형태로 추출. db 파일명으로 사용.
   # keywords = ["악성코드","랜섬웨어"]  
-  keywords = ["악성코드","랜섬웨어","멀웨어","취약점","CVE","제로데이","해킹","해커","사이버공격","DDos","디도스","개인정보","고객정보","보안사고","GDPR","피싱"]  
+  keywords =  Keywords.objects.all().values_list('keyword', flat=True)  
+  #keywords = ["악성코드","랜섬웨어","멀웨어","취약점","CVE","제로데이","해킹","해커","사이버공격","DDos","디도스","개인정보","고객정보","보안사고","GDPR","피싱"]  
   # keywords 검색할 키워드  
-  media_list = load_db_todict("media")  
+
+  # media 는 이제 db에서 직접 쿼리할 수 있으므로 리스트를 만들어 넘겨주지 않아도 됨
+  # media_list = Media.objects.all()
+  '''
+  for media in media_list:
+    insert = Media(media_name=media['media_name'], domain=media['domain'])
+    try:      
+      insert.save()   
+    except:
+      pass
+  '''
+  
+
   # media_list 매체 정보
   # part 2. 기사 처리 
   try:    
@@ -274,6 +293,7 @@ def scrap():
             search_overlap = next(item for item in scrapped_news if item['link'] == entry['originallink'])
             # link 값이 같은 개체를 찾아서 next 로 해당 개체를 serch_overlap으로 선언
             old_cat = search_overlap['cat']
+            print(old_cat)
             # serch_overlap의 cat 을 old_cat으로 선언
             if cat in old_cat:
               # old_cat에 검색어(string) cat이 포함되어 있으면 pass
@@ -283,7 +303,7 @@ def scrap():
               # old_cat에 검색어 cat이 포함되어 있지 않으면, cat을 뒤에 붙여준 스트링으로 덮어 쓰기   
           else:
             print("신규")        
-            result,media_list = make_article(entry, cat, media_list)    
+            result = make_article(entry, cat)    
             # 중복 기사가 아닐 경우 entry를 cat, media_list와 함께 make_article 함수에 인자로 던져주고 result,medi_list를 반환받음
             # Media_list를 반환 받을 필요가 있는지 확인해볼 것.          
             if result["media"] == "도메인 에러" : 
@@ -297,18 +317,14 @@ def scrap():
     # 수집이 끝난 scrapped_news 리스트를 최신 순으로 정렬
     write_todb(sorted_scrapped_news, f'news_{search_date}')
     # sorted_scrapped news를 new_년-월-일.csv로 저장    
-    write_todb(media_list,'media')
-    # 반환받은 media_list를 media.csv에 덮어쓰기
+    # write_todb(media_list,'media')
+    # 반환받은 media_list를 media.csv에 덮어쓰기는 것으로 이제 db로 전환했기 때문에 주석처리
     print("오늘자 DB파일 작성을 완료하였습니다")
     scrapped_news = load_db_todict(f'news_{search_date}')
     return scrapped_news
     # scrapped_news
   else:
     return scrapped_news
+    # 리스트화 필요
     # new_년-월-일.csv에서 load한 기사를 scrapped_news로 반환
 
-
-
-
-
- 

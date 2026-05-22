@@ -3,13 +3,16 @@ from django.db import models
 # Create your models here.
 class Media(models.Model):
     media_name = models.CharField(max_length=200)
-    domain = models.URLField()
+    domain = models.URLField(unique=True)
 
     def display_url(self):
         return f"{self.media_name} : {self.domain}"
     
     def __str__(self):
         return self.display_url()
+    
+    class Meta:
+        verbose_name_plural = "Media"
 
 
 class Keywords(models.Model):
@@ -17,6 +20,9 @@ class Keywords(models.Model):
     
     def __str__(self):
         return self.keyword
+    
+    class Meta:
+        verbose_name_plural = "Keywords"
 
 
 class News(models.Model):
