@@ -23,7 +23,7 @@ def get_kisa_status():
 
 # time_check()
 # 뉴스 수집 시간을 str 로 변환하고, 오늘 요일을 확인하는 함수. csv 파일 저장시 파일명으로 사용
-def time_check():
+def time_check():  
   #current_timef = datetime.datetime.now(timezone("Asia/Seoul")).strftime('%Y-%m-%d %H:%M:%S')
   current_timef = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
   current_time = datetime.datetime.strptime(current_timef, '%Y-%m-%d %H:%M:%S')
@@ -33,10 +33,10 @@ def time_check():
 # convert_time()
 # get_news()에서 사용할 수 있게 검색된 news의 pubTime을 str로 변환
 def convert_time(time):
-  # print(time)
+  # print(time)       
   strip = datetime.datetime.strptime(time, '%a, %d %b %Y %H:%M:%S +0900')
   converted_str = strip.strftime('%Y-%m-%d %H:%M:%S')
-  converted = datetime.datetime.strptime(converted_str, '%Y-%m-%d %H:%M:%S')
+  converted = datetime.datetime.strptime(converted_str, '%Y-%m-%d %H:%M:%S')  
   # print(converted)
   return converted  
 
@@ -177,7 +177,7 @@ def make_article(entry, cat):
   # headers 기사 본문 수집과 신문사 정보를 얻을 때 사용할 header
   text, domain = make_text(entry['originallink'], headers)  
   cat_obj = Keywords.objects.get(keyword=cat)
-  # text, domain make_text()에 entry link값을 인로 주고 기사 본문과 domain 주소를 반환받음
+  # text, domain make_text()에 entry link값을 인로 주고 기사 본문과 domain 주소를 반환받음  
   result = News(
     title = brush_text(entry.get('title')),    
     description = brush_text(entry.get('description')),
@@ -185,8 +185,8 @@ def make_article(entry, cat):
     link = entry['originallink'],
     text = brush_text(text),
     media = get_brand(domain,headers)
-    )
-  result.save()
+    )  
+  result.save()  
   result.cat.add(cat_obj)
   #print(result)
   # 위에서 반환 받은 값으로 entry 를 result로 재구성
@@ -227,15 +227,15 @@ def get_news(word, current_time, w_day):
   else:   
     news_list = news_request.json()["items"]   
     # news_list news_rqueset의 개체들을 list로 변환
-    for news in news_list:      
+    for news in news_list:         
       pubDate = convert_time(news['pubDate'])      
       # pubDate = news_list 개체의 pubdate를 비교 가능한 형태로 변환    
-      dayDiff = (current_time - pubDate).days
+      dayDiff = (current_time - pubDate).days      
       # dayDiff 오늘 날짜 - 기사 날짜 
-      if w_day == 0 and dayDiff < 3:        
+      if w_day == 0 and dayDiff < 3:                
         sorted_news_list.append(news)
         # sorted_news_list 오늘이 월요일이면 72시간 이내 기사만 sorted_news_list에 추가
-      elif w_day != 0 and dayDiff <= 1:  
+      elif w_day != 0 and dayDiff <= 1:          
         # sorted_news_list 오늘이 월요일이 아니면 48시간 이내 기사만 sorted_news_list에 추가
         sorted_news_list.append(news)
       else:
@@ -247,21 +247,21 @@ def get_news(word, current_time, w_day):
 # db 데이터에 pubdate 기준으로 필터를 걸어서 그날자 기사가 없으면 rase error 하는 로직 필요
 def load_news(search_date, w_day):
   str_list = []  
-  days = 3 if w_day == 0 else 2   
-  news_list = News.objects.filter(pubDate__range=(timezone.now()-datetime.timedelta(days=days),timezone.now())).order_by('-pubDate')
-  for news in news_list:
+  days = 3 if w_day == 0 else 2     
+  #news_list = News.objects.all().order_by('-pubDate')  
+  news_list = News.objects.filter(pubDate__range=(timezone.now()-datetime.timedelta(days=days),timezone.now())).order_by('-pubDate')  
+  for news in news_list:    
     item = {
       'title': news.title,
       'description' : news.description,
       'text': news.text,
       'pubDate': datetime.datetime.strftime(news.pubDate,'%Y-%m-%d %H:%M:%S'),
-      'cat': ' '.join(news.cat.all().values_list('keyword', flat=True)),
+      'cat': ', '.join(news.cat.all().values_list('keyword', flat=True)),
       'link': news.link,
       'media': news.media.media_name
-    }    
-    str_list.append(item)
-    print(str_list[0])
-    return str_list
+    }  
+    str_list.append(item)    
+  return str_list
   
 
 # init()
@@ -289,7 +289,8 @@ def init():
     # media 는 이제 db에서 직접 쿼리할 수 있으므로 리스트를 만들어 넘겨주지 않아도 됨   
     # media_list = Media.objects.all()           
 
-    keywords =  Keywords.objects.all()[:2].values_list('keyword', flat=True)
+    keywords =  Keywords.objects.all().values_list('keyword', flat=True)
+    #keywords =  Keywords.objects.all()[:2].values_list('keyword', flat=True)
     # 뉴스에서 검색할 키워드  
 
     for key in keywords:      
@@ -306,7 +307,8 @@ def init():
             print("중복")
             add_key = Keywords.objects.get(keyword=key)
             News.objects.get(link=entry['originallink']).cat.add(add_key)
-          else:               
+          else:
+            print("신규")     
             make_article(entry, key)    
             # 중복 기사가 아닐 경우 entry를 cat, media_list와 함께 make_article 함수에 인자로 던져주고 result,medi_list를 반환받음
             # Media_list를 반환 받을 필요가 있는지 확인해볼 것.          
