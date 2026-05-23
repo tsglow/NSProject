@@ -1,12 +1,13 @@
 import requests, re
+import datetime
 from bs4 import BeautifulSoup
 from newspaper import Article
-from datetime import datetime
-from pytz import timezone
+#from pytz import timezone
 from operator import itemgetter
 from scrapper.load_write import load_db_todict,load_db_tolist,write_todb
 from django.conf import settings
 from .models import Keywords, Media, News
+from django.utils import timezone
 
 # get_kisa_status()
 # 인터넷 진흥원의 인터넷 침해사고 경보단계를 가져오는 함수
@@ -23,7 +24,8 @@ def get_kisa_status():
 # time_check()
 # 뉴스 수집 시간을 str 로 변환하고, 오늘 요일을 확인하는 함수. csv 파일 저장시 파일명으로 사용
 def time_check():
-  current_timef = datetime.datetime.now(timezone("Asia/Seoul")).strftime('%Y-%m-%d %H:%M:%S')
+  #current_timef = datetime.datetime.now(timezone("Asia/Seoul")).strftime('%Y-%m-%d %H:%M:%S')
+  current_timef = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
   current_time = datetime.datetime.strptime(current_timef, '%Y-%m-%d %H:%M:%S')
   w_day = current_time.weekday()  # 요일체크  
   return current_time,w_day
@@ -174,17 +176,18 @@ def make_article(entry, cat):
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'}
   # headers 기사 본문 수집과 신문사 정보를 얻을 때 사용할 header
   text, domain = make_text(entry['originallink'], headers)  
+  cat_obj = Keywords.objects.get(keyword=cat)
   # text, domain make_text()에 entry link값을 인로 주고 기사 본문과 domain 주소를 반환받음
   result = News(
     title = brush_text(entry.get('title')),    
     description = brush_text(entry.get('description')),
-    pubDate = convert_time(entry.get('pubDate')),
-    cat = Keywords.objects.filter(Keyword=cat),
+    pubDate = convert_time(entry.get('pubDate')),    
     link = entry['originallink'],
     text = brush_text(text),
     media = get_brand(domain,headers)
     )
   result.save()
+  result.cat.add(cat_obj)
   #print(result)
   # 위에서 반환 받은 값으로 entry 를 result로 재구성
   # return result
@@ -251,12 +254,13 @@ def load_news(search_date, w_day):
       'title': news.title,
       'description' : news.description,
       'text': news.text,
-      'pubdate': datetime.strftime(news.pubDate,'%Y-%m-%d %H:%M:%S'),
+      'pubDate': datetime.datetime.strftime(news.pubDate,'%Y-%m-%d %H:%M:%S'),
       'cat': ' '.join(news.cat.all().values_list('keyword', flat=True)),
       'link': news.link,
       'media': news.media.media_name
-    }
+    }    
     str_list.append(item)
+    print(str_list[0])
     return str_list
   
 
@@ -272,13 +276,14 @@ def init():
   # current_time, w_day 현재 time과 요일
   search_date = current_time.strftime('%Y-%m-%d') 
   # current_time에서 date 만 Y-M-D형태로 추출. db 파일명으로 사용.
-  
+    
   # part 2. 기사 처리 
-  try:    
+  if not News.objects.filter(pubDate__date=datetime.date.today()).count() == 0:
     scrapped_news = load_news(search_date, w_day)
-    # 이미 수집해서 db 파일을 작성했으면 이걸 load        
     print("DB에서 기사를 불러왔습니다.")    
-  except:
+    # 이미 수집해서 db 파일을 작성했으면 이걸 load  
+    return scrapped_news      
+  else:  
     # DB에 내용이 없는 경우
     print("불러올 기사 파일이 없습니다. ")
     # media 는 이제 db에서 직접 쿼리할 수 있으므로 리스트를 만들어 넘겨주지 않아도 됨   
@@ -297,10 +302,10 @@ def init():
         for entry in news_list:
           # 반환 받은 news_list중 중복 기사를 처리                  
           # cat(egory) 값을 검색어word로 선언하고
-          if News.objects.filter(url=entry['originallink']).exists():
+          if News.objects.filter(link=entry['originallink']).exists():
             print("중복")
             add_key = Keywords.objects.get(keyword=key)
-            News.objects.get(url=entry['originallink']).cat.add(add_key)
+            News.objects.get(link=entry['originallink']).cat.add(add_key)
           else:               
             make_article(entry, key)    
             # 중복 기사가 아닐 경우 entry를 cat, media_list와 함께 make_article 함수에 인자로 던져주고 result,medi_list를 반환받음
@@ -323,9 +328,8 @@ def init():
     return scrapped_news
     # scrapped_news = load_db_todict(f'news_{search_date}')
     # return sorted_scrapped_news
-    # scrapped_news
-  else:
-    return scrapped_news
+    # scrapped_news  
+    
     # 리스트화 필요
     # new_년-월-일.csv에서 load한 기사를 scrapped_news로 반환
 
