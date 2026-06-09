@@ -38,12 +38,12 @@ NEW_KWD = get_secret("na_psd")
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-(gv)!n$%70_jylfqf3a)_6%tz1fht&g4!^xnzfa=ypy16wsv#e'
+SECRET_KEY = get_secret("django_key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['pipboy.mooo.com','localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['pipboy.mooo.com','localhost', '127.0.0.1','172.20.166.113']
 CSRF_TRUSTED_ORIGINS = ['https://pipboy.mooo.com']
 #you need this to login admin page
 

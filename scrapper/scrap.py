@@ -87,6 +87,7 @@ def get_brand(domain,headers):
         # rst domain 을 reguest.get()에 인자로 주고 rst를 반환받음
       except:
         # request.get() 했을 때 오류가 발생하면
+        print(f'get {domain} failed')
         name = Media(domain=domain, media_name=domain)
         name.save()
         # name domain 값을 name으로 처리
@@ -101,12 +102,14 @@ def get_brand(domain,headers):
         rst.encoding = rst.apparent_encoding
         # rst.encoding rst개체를 원문 기사 인코딩 방식대로 인코딩처리. euc-kr로 나타내는게 목적이지만 원문 기사가 euc-kr이 아니었다면 여전히 깨질 수 있음. 
         soup = BeautifulSoup(rst.text, 'html.parser')
+        print(soup)
         # soup rst.text 를 soup으로 parsing
         try:
           name = soup.find("head").find("title").string
           # name head tag의 title tag 문자열을 name으로 반환시도해서
         except:
           # title tag 가 없는 등 오류가 발생하면
+          print(f'soup {domain} failed')
           name = Media(domain=domain, media_name=domain)
           name.save()
           # name domain 값을 name으로 처리
@@ -119,6 +122,7 @@ def get_brand(domain,headers):
           # name 값이 정상적으로 반환되면
           # media_list = edit_media_list(domain, name, media_list)
           # media_list domain, name 을 edit_media_list에 인자로 주고 반환값으로 media_list 갱신
+          print(f'{domain} name is {name}')
           name = brush_text(name)
           new_media = Media(domain=domain, media_name=name)
           new_media.save()
